@@ -1,6 +1,7 @@
 build/
 cmake-build-debug/
 src/quiz/ransac/*
+src/quiz/ransac/.idea
 !src/quiz/ransac/ransac2d.cpp
 !src/quiz/ransac/CMakeLists.txt
 src/quiz/cluster/*

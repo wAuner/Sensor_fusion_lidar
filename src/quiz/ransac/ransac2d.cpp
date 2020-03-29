@@ -6,6 +6,7 @@
 #include "../../processPointClouds.h"
 // using templates for processPointClouds so also include .cpp to help linker
 #include "../../processPointClouds.cpp"
+#include <random>
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr CreateData() {
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>());
@@ -57,22 +58,62 @@ pcl::visualization::PCLVisualizer::Ptr initScene() {
 }
 
 std::unordered_set<int> Ransac(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, int maxIterations, float distanceTol) {
+    // set up random generator
     std::unordered_set<int> inliersResult;
-    srand(time(NULL));
+    std::random_device randomDevice;
+    std::default_random_engine e1(randomDevice());
+    std::uniform_int_distribution<int> uniform_dist(0, cloud->size() - 1);
 
-    // TODO: Fill in this function
+    for (int i = 0; i < maxIterations; i++) {
+        int randIdx1 = uniform_dist(e1);
+        int randIdx2 = uniform_dist(e1);
+        while (randIdx2 == randIdx1) {
+            randIdx2 = uniform_dist(e1);
+        }
 
-    // For max iterations
+        // fit line between the two points
+        float A, B, C;
+        pcl::PointXYZ& p1 = cloud->points.at(randIdx1);
+        pcl::PointXYZ& p2 = cloud->points.at(randIdx2);
 
-    // Randomly sample subset and fit line
+        float& x1 = p1.x;
+        float& y1 = p1.y;
+        float& x2 = p2.x;
+        float& y2 = p2.y;
 
-    // Measure distance between every point and fitted line
-    // If distance is smaller than threshold count it as inlier
+        // parameters for two point form
+        A = y1 - y2;
+        B = x2 - x1;
+        C = x1 * y2 - x2 * y1;
 
-    // Return indicies of inliers from fitted line with most inliers
+        // count inliers of current model
+        // start with sample points
+        std::unordered_set<int> inliersIteration;
+        inliersIteration.insert(randIdx1);
+        inliersIteration.insert(randIdx2);
 
+        // loop over points in cloud and check whether they are inliers
+        for (int idx = 0; idx < cloud->points.size(); idx++) {
+            // skip selected points
+            if (idx == randIdx1 || idx == randIdx2) {
+                continue;
+            }
+            // calculate distance between point and model line
+            float& x3 = cloud->points.at(idx).x;
+            float& y3 = cloud->points.at(idx).y;
+
+            float distance = fabs(A * x3 + B * y3 + C) / sqrt(pow(A, 2) + pow(B, 2));
+            // add inliers
+            if (distance <= distanceTol) {
+                inliersIteration.insert(idx);
+            }
+        }
+        // if model has more inliers, choose the model
+        if (inliersIteration.size() > inliersResult.size()) {
+            inliersResult = std::move(inliersIteration);
+        }
+    }
     return inliersResult;
-
 }
 
 int main() {
@@ -85,7 +126,7 @@ int main() {
 
 
     // TODO: Change the max iteration and distance tolerance arguments for Ransac function
-    std::unordered_set<int> inliers = Ransac(cloud, 0, 0);
+    std::unordered_set<int> inliers = Ransac(cloud, 50, 0.5);
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloudInliers(new pcl::PointCloud<pcl::PointXYZ>());
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloudOutliers(new pcl::PointCloud<pcl::PointXYZ>());
