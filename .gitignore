@@ -1,2 +1,9 @@
 build/
 cmake-build-debug/
+src/quiz/ransac/*
+!src/quiz/ransac/ransac2d.cpp
+!src/quiz/ransac/CMakeLists.txt
+src/quiz/cluster/*
+!src/quiz/clust/cluster.cpp
+!src/quiz/clust/CMakeLists.txt
+!src/quiz/clust/kdtree.h
