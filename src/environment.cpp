@@ -55,9 +55,26 @@ void simpleHighway(pcl::visualization::PCLVisualizer::Ptr& viewer)
     renderPointCloud(viewer, pointCloud, "utz");
 
     auto processPointClouds = std::make_shared<ProcessPointClouds<pcl::PointXYZ>>();
+    // segment cloud into objects and road
     auto segmentedClouds = processPointClouds->SegmentPlane(pointCloud, 100, 0.2);
-    renderPointCloud(viewer, segmentedClouds.first, "obstacleCloud", Color(1, 0, 0));
+    //renderPointCloud(viewer, segmentedClouds.first, "obstacleCloud", Color(1, 0, 0));
     renderPointCloud(viewer, segmentedClouds.second, "planeCloud", Color(0,1,0));
+
+    // find clusters in obstacle cloud
+    auto cloudClusters = processPointClouds->Clustering(segmentedClouds.first, 1.0, 3, 30);
+    int clusterId = 0;
+    std::vector<Color> colors = {Color(1, 0, 0), Color(1, 1, 0), Color(0, 0, 1)};
+
+    // render clusters
+    // warning: rendering limited to three clusters because of
+    // # defined colors
+    for (auto& cluster : cloudClusters) {
+        std::cout << "cluster size of cloud #" << clusterId << ": ";
+        // stupid print function...
+        processPointClouds->numPoints(cluster);
+        renderPointCloud(viewer, cluster, "obstCloud" + std::to_string(clusterId), colors.at(clusterId));
+        clusterId++;
+    }
   
 }
 
@@ -98,5 +115,5 @@ int main (int argc, char** argv)
     while (!viewer->wasStopped ())
     {
         viewer->spinOnce ();
-    } 
+    }
 }
