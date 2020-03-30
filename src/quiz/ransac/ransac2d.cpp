@@ -65,44 +65,48 @@ std::unordered_set<int> Ransac(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, int ma
     std::uniform_int_distribution<int> uniform_dist(0, cloud->size() - 1);
 
     for (int i = 0; i < maxIterations; i++) {
-        int randIdx1 = uniform_dist(e1);
-        int randIdx2 = uniform_dist(e1);
-        while (randIdx2 == randIdx1) {
-            randIdx2 = uniform_dist(e1);
+        // chose three random points for possible plane model
+        std::unordered_set<int> inliersIteration;
+        while (inliersIteration.size() < 3) {
+            inliersIteration.insert(uniform_dist(e1));
         }
 
-        // fit line between the two points
-        float A, B, C;
-        pcl::PointXYZ& p1 = cloud->points.at(randIdx1);
-        pcl::PointXYZ& p2 = cloud->points.at(randIdx2);
+        // fit line between the three points
+        // get a reference to each of the randomly selected points
+        auto indicesItr = inliersIteration.begin();
+        pcl::PointXYZ& p1 = cloud->points.at(*indicesItr);
+        indicesItr++;
+        pcl::PointXYZ& p2 = cloud->points.at(*indicesItr);
+        indicesItr++;
+        pcl::PointXYZ& p3 = cloud->points.at(*indicesItr);
 
-        float& x1 = p1.x;
-        float& y1 = p1.y;
-        float& x2 = p2.x;
-        float& y2 = p2.y;
+        // aliases to make formula more readable
+        float& x1 = p1.x, y1 = p1.y, z1 = p1.z;
+        float& x2 = p2.x, y2 = p2.y, z2 = p2.z;
+        float& x3 = p3.x, y3 = p3.y, z3 = p3.z;
 
-        // parameters for two point form
-        A = y1 - y2;
-        B = x2 - x1;
-        C = x1 * y2 - x2 * y1;
+        // a plane between two vectors v1[p1->p2] and v2[p1->p3]
+        // the cross product of v1 x v2 is the normal vector v3 <v3i,v3j,v3k>
+        float v3i = (y2 - y1) * (z3 - z1) - (z2 - z1) * (y3 - y1);
+        float v3j = (z2 - z1) * (x3 - x1) - (x2 - x1) * (z3 - z1);
+        float v3k = (x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1);
 
-        // count inliers of current model
-        // start with sample points
-        std::unordered_set<int> inliersIteration;
-        inliersIteration.insert(randIdx1);
-        inliersIteration.insert(randIdx2);
+        // plane formula Ax + By + Cz + D = 0
+        float& A = v3i, B = v3j, C = v3k;
+        float D = -(v3i * x1 + v3j * y1 + v3k * z1);
 
         // loop over points in cloud and check whether they are inliers
         for (int idx = 0; idx < cloud->points.size(); idx++) {
             // skip selected points
-            if (idx == randIdx1 || idx == randIdx2) {
+            if (inliersIteration.count(idx)) {
                 continue;
             }
             // calculate distance between point and model line
-            float& x3 = cloud->points.at(idx).x;
-            float& y3 = cloud->points.at(idx).y;
+            float& x4 = cloud->points.at(idx).x;
+            float& y4 = cloud->points.at(idx).y;
+            float& z4 = cloud->points.at(idx).z;
 
-            float distance = fabs(A * x3 + B * y3 + C) / sqrt(pow(A, 2) + pow(B, 2));
+            float distance = fabs(A * x4 + B * y4 + C * z4 + D) / sqrt(pow(A, 2) + pow(B, 2) + pow(C, 2));
             // add inliers
             if (distance <= distanceTol) {
                 inliersIteration.insert(idx);
@@ -122,10 +126,10 @@ int main() {
     pcl::visualization::PCLVisualizer::Ptr viewer = initScene();
 
     // Create data
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = CreateData();
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = CreateData3D();
 
 
-    // TODO: Change the max iteration and distance tolerance arguments for Ransac function
+    // Done: Change the max iteration and distance tolerance arguments for Ransac function
     std::unordered_set<int> inliers = Ransac(cloud, 50, 0.5);
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloudInliers(new pcl::PointCloud<pcl::PointXYZ>());
