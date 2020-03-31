@@ -26,7 +26,6 @@ struct KdTree {
         // the function should create a new node and place correctly with in the root
         int treeDepth = 0;
         Node** currentNode = &root;
-        Node** previousNode = &root;
         // traverse the tree until you hit a leaf, then insert
         while (true) {
             if (*currentNode == nullptr) {
@@ -51,15 +50,45 @@ struct KdTree {
 
     }
 
+    void
+    searchRecurse(const std::vector<float>& target, float distanceTol, std::vector<int>& ids, Node* currentNode,
+                  int depth) const {
 
-
-    // return a list of point ids in the tree that are within distance of target
-    std::vector<int> search(std::vector<float> target, float distanceTol) {
-        std::vector<int> ids;
-        return ids;
+        if (currentNode != nullptr) {
+            // check if Node lies within target box
+            if ((target.at(0) + distanceTol >= currentNode->point.at(0) &&
+                 target.at(0) - distanceTol <= currentNode->point.at(0))
+                && (target.at(1) + distanceTol >= currentNode->point.at(1) &&
+                    target.at(1) - distanceTol <= currentNode->point.at(1))) {
+                // circular distance
+                float distance = sqrt(pow(currentNode->point.at(0) - target.at(0), 2) +
+                                      pow(currentNode->point.at(1) - target.at(1), 2));
+                // add node if close enough
+                if (distance <= distanceTol) {
+                    ids.push_back(currentNode->id);
+                }
+            }
+            // get feature values on which to split while traversing the tree
+            float targetVal = target.at(depth % 2);
+            float nodeVal = currentNode->point.at(depth % 2);
+            // check and explore tree branch
+            if (targetVal - distanceTol < nodeVal) {
+                searchRecurse(target, distanceTol, ids, currentNode->left, depth++);
+            }
+            if (targetVal + distanceTol >= nodeVal) {
+                searchRecurse(target, distanceTol, ids, currentNode->right, depth++);
+            }
+        }
     }
 
+    // return a list of point ids in the tree that are within distance of target
+    std::vector<int> search(const std::vector<float> target, float distanceTol) {
+        std::vector<int> ids;
 
+        searchRecurse(target, distanceTol, ids, root, 0);
+
+        return ids;
+    }
 };
 
 
