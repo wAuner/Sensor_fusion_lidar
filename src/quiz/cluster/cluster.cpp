@@ -76,17 +76,15 @@ render2DTree(Node* node, pcl::visualization::PCLVisualizer::Ptr& viewer, Box win
 
 void findClusterPoints(const std::vector<std::vector<float>>& points, int pointIdx, std::vector<int>& cluster,
                        std::unordered_set<int>& processedPoints, KdTree* tree, float distanceTol) {
-
     // markt point as processed
     processedPoints.insert(pointIdx);
+    cluster.push_back(pointIdx);
     std::vector<int> nearestNeighborIds = tree->search(points.at(pointIdx), distanceTol);
-    for (auto neighborId : nearestNeighborIds) {
-        // if neighbor has not yet been processed
+    for (int neighborId : nearestNeighborIds) {
         if (processedPoints.find(neighborId) == processedPoints.end()) {
             findClusterPoints(points, neighborId, cluster, processedPoints, tree, distanceTol);
         }
     }
-
 }
 
 std::vector<std::vector<int>>
@@ -99,7 +97,7 @@ euclideanCluster(const std::vector<std::vector<float>>& points, KdTree* tree, fl
         if (processedPoints.find(pointIdx) == processedPoints.end()) {
             std::vector<int> cluster;
             findClusterPoints(points, pointIdx, cluster, processedPoints, tree, distanceTol);
-            clusters.push_back(cluster);
+            clusters.push_back(std::move(cluster));
         }
     }
     return clusters;

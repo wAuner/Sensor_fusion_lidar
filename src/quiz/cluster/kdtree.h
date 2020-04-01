@@ -73,10 +73,10 @@ struct KdTree {
             float nodeVal = currentNode->point.at(depth % 2);
             // check and explore tree branch
             if (targetVal - distanceTol < nodeVal) {
-                searchRecurse(target, distanceTol, ids, currentNode->left, depth++);
+                searchRecurse(target, distanceTol, ids, currentNode->left, depth+1);
             }
             if (targetVal + distanceTol >= nodeVal) {
-                searchRecurse(target, distanceTol, ids, currentNode->right, depth++);
+                searchRecurse(target, distanceTol, ids, currentNode->right, depth+1);
             }
         }
     }
