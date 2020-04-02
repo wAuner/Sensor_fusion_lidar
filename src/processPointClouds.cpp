@@ -27,13 +27,49 @@ typename pcl::PointCloud<PointT>::Ptr ProcessPointClouds<PointT>::FilterCloud(ty
     // Time segmentation process
     auto startTime = std::chrono::steady_clock::now();
 
-    // TODO:: Fill in the function to do voxel grid point reduction and region based filtering
+    // Done:: Fill in the function to do voxel grid point reduction and region based filtering
+    // voxel downsampling
+    typename pcl::PointCloud<PointT>::Ptr sampledCloud {new pcl::PointCloud<PointT>};
+    pcl::VoxelGrid<PointT> voxelGrid;
+    voxelGrid.setInputCloud(cloud);
+    voxelGrid.setLeafSize(filterRes, filterRes, filterRes);
+    voxelGrid.filter(*sampledCloud);
+
+    // throw everything outside of ROI away
+    typename pcl::PointCloud<PointT>::Ptr roiCloud{new pcl::PointCloud<PointT>};
+    pcl::CropBox<PointT> roi(true);
+    roi.setMin(minPoint);
+    roi.setMax(maxPoint);
+    roi.setInputCloud(sampledCloud);
+    roi.filter(*roiCloud);
+
+    // filter points from car roof by inverse ROI filtering
+    // collect points to be removed
+    std::vector<int> roofIndices;
+    pcl::CropBox<PointT> carRoofFilter(true);
+    // define area of roof / where to filter
+    carRoofFilter.setMin(Eigen::Vector4f(-1.5, -1.7, -1., 1.));
+    carRoofFilter.setMax(Eigen::Vector4f(2.6, 1.7, -0.4, 1.));
+    carRoofFilter.setInputCloud(roiCloud);
+    carRoofFilter.filter(roofIndices);
+    // prepare separation of roof points
+    pcl::PointIndices::Ptr inliers {new pcl::PointIndices()};
+    for (int roofPoint : roofIndices) {
+        inliers->indices.push_back(roofPoint);
+    }
+
+    // extract roof points from filtered cloud
+    pcl::ExtractIndices<PointT> extractor;
+    extractor.setInputCloud(roiCloud);
+    extractor.setIndices(inliers);
+    extractor.setNegative(true);
+    extractor.filter(*roiCloud);
 
     auto endTime = std::chrono::steady_clock::now();
     auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
     std::cout << "filtering took " << elapsedTime.count() << " milliseconds" << std::endl;
 
-    return cloud;
+    return roiCloud;
 
 }
 
