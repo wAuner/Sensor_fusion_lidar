@@ -76,7 +76,7 @@ render2DTree(Node* node, pcl::visualization::PCLVisualizer::Ptr& viewer, Box win
 
 void findClusterPoints(const std::vector<std::vector<float>>& points, int pointIdx, std::vector<int>& cluster,
                        std::unordered_set<int>& processedPoints, KdTree* tree, float distanceTol) {
-    // markt point as processed
+    // mark point as processed
     processedPoints.insert(pointIdx);
     cluster.push_back(pointIdx);
     std::vector<int> nearestNeighborIds = tree->search(points.at(pointIdx), distanceTol);

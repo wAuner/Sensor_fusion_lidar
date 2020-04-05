@@ -15,13 +15,17 @@ add_definitions(${PCL_DEFINITIONS})
 list(REMOVE_ITEM PCL_LIBRARIES "vtkproj4")
 
 
-add_executable (environment src/environment.cpp src/render/render.cpp src/processPointClouds.cpp)
+add_executable (environment src/environment.cpp src/render/render.cpp src/processPointClouds.tpp)
 target_link_libraries (environment ${PCL_LIBRARIES})
+
 add_executable(ransac_quiz src/quiz/ransac/ransac2d.cpp src/render/render.cpp)
 target_link_libraries(ransac_quiz ${PCL_LIBRARIES})
+
 add_executable(cluster_quiz src/quiz/cluster/cluster.cpp src/render/render.cpp)
 target_link_libraries(cluster_quiz ${PCL_LIBRARIES})
 
+add_executable(projectSubmission src/projectSubmission.cpp src/MyPointCloudProcessor.h src/render/render.cpp src/processPointClouds.tpp)
+target_link_libraries(projectSubmission ${PCL_LIBRARIES})
 
 
 
