@@ -47,7 +47,7 @@ void cityBlock(pcl::visualization::PCLVisualizer::Ptr& viewer,
     //renderPointCloud(viewer,inputCloud,"inputCloud");
 
     // define downsampling parameters and region of interest
-    float voxelSize = 0.1; // 1cm grid size
+    float voxelSize = 0.5; // 50cm grid size
     Eigen::Vector4f minPoint{-20, -10, -2, 1};
     Eigen::Vector4f maxPoint{20, 10, 2, 1};
     // downsampling of the cloud data to increase performance

@@ -11,6 +11,7 @@
 #include <memory>
 #include <random>
 
+
 template<typename PointT>
 class MyPointCloudProcessor : public ProcessPointClouds<PointT> {
 private:
@@ -27,7 +28,7 @@ private:
         std::uniform_int_distribution<int> uniform_dist(0, cloud->size() - 1);
 
         for (int i = 0; i < maxIterations; i++) {
-            // chose three random points for possible plane model
+            // chose three distinct random points for possible plane model
             std::unordered_set<int> inliersIteration;
             while (inliersIteration.size() < 3) {
                 inliersIteration.insert(uniform_dist(e1));
@@ -83,7 +84,7 @@ private:
         auto endTime = std::chrono::steady_clock::now();
         auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
         std::cout << "ransac took " << elapsedTime.count() << " milliseconds" << std::endl;
-        return inliersResult;
+        return std::move(inliersResult);
     };
 
     // cluster algorithm implementation to be called from Clustering
@@ -131,13 +132,21 @@ public:
     // TODO: increase efficiency
     std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT>::Ptr>
     SegmentPlane(typename pcl::PointCloud<PointT>::Ptr cloud, int maxIterations, float distanceThreshold) override {
+        // Time segmentation process
+        auto startTime = std::chrono::steady_clock::now();
+
         // find inliers with ransac
         std::unordered_set<int> inliers = _ransac(cloud, maxIterations, distanceThreshold);
         // transfer to other data type/container for SeparateClouds
         pcl::PointIndices::Ptr inliersIndices {new pcl::PointIndices()};
+        inliersIndices->indices.reserve(inliers.size());
         for (int inlier : inliers) {
             inliersIndices->indices.push_back(inlier);
         }
+
+        auto endTime = std::chrono::steady_clock::now();
+        auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+        std::cout << "plane segmentation took " << elapsedTime.count() << " milliseconds" << std::endl;
 
         return this->SeparateClouds(inliersIndices, cloud);
     };
