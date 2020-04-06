@@ -24,7 +24,7 @@ target_link_libraries(ransac_quiz ${PCL_LIBRARIES})
 add_executable(cluster_quiz src/quiz/cluster/cluster.cpp src/render/render.cpp)
 target_link_libraries(cluster_quiz ${PCL_LIBRARIES})
 
-add_executable(projectSubmission src/projectSubmission.cpp src/MyPointCloudProcessor.h src/render/render.cpp src/processPointClouds.tpp)
+add_executable(projectSubmission src/projectSubmission.cpp src/MyPointCloudProcessor.h src/render/render.cpp src/processPointClouds.tpp src/balancedKdtree.cpp)
 target_link_libraries(projectSubmission ${PCL_LIBRARIES})
 
 
