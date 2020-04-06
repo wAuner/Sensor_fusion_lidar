@@ -17,7 +17,7 @@ KdTree::KdTree(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud) : _root(nullptr) {
 void KdTree::_insertPoints(std::vector<pcl::PointXYZI*>& points, int depth, Node*& currentNode) {
     // lambda func to allow sorting of points based on alternating features depending on tree depth
     auto comparePoints = [depth](const pcl::PointXYZI* pointA, const pcl::PointXYZI* pointB)-> bool{
-        return pointA->data_c[depth % 3] < pointB->data_c[depth % 3];
+        return pointA->data[depth % 3] < pointB->data[depth % 3];
     };
     std::sort(points.begin(), points.end(), comparePoints);
     // find median index
@@ -29,7 +29,6 @@ void KdTree::_insertPoints(std::vector<pcl::PointXYZI*>& points, int depth, Node
     // median point
     pcl::PointXYZI* pointToSplitOn = points.at(medianPos);
 
-    // TODO: implement inserting recursive
     // find median
     //split left right
     if (currentNode == nullptr) {
@@ -46,4 +45,47 @@ void KdTree::_insertPoints(std::vector<pcl::PointXYZI*>& points, int depth, Node
         _insertPoints(pointsLeft, depth + 1, currentNode->left);
         _insertPoints(pointsRight, depth + 1, currentNode->right);
     }
+}
+
+// public interface, returns the pointer to the points that belong to a cluster
+std::vector<pcl::PointXYZI*> KdTree::findClusterPoints(pcl::PointXYZI* queryPoint, float distanceTol) {
+    std::vector<pcl::PointXYZI*> clusterPoints;
+    _searchClusterPoints(clusterPoints, queryPoint, distanceTol, _root,0);
+
+    return clusterPoints;
+}
+
+// traverses the tree and looks for points close the queryPoint
+void
+KdTree::_searchClusterPoints(std::vector<pcl::PointXYZI*>& clusterPoints, pcl::PointXYZI* queryPoint, const float& distanceTol,
+                             Node* nodeToCheck, int depth) {
+    // return if end of tree is reached
+    if (nodeToCheck != nullptr) {
+        // check if points are close within cube
+        if (_checkIfInBox(queryPoint, nodeToCheck, distanceTol)) {
+            clusterPoints.push_back(nodeToCheck->point);
+        }
+        float& splitValQuery = queryPoint->data[depth % 3];
+        float& splitValNode = nodeToCheck->point->data[depth % 3];
+
+        // test which sub spaces need to be explored
+        // if the bounding box around the target box overlaps with a subspace, explore it
+        if (splitValQuery - distanceTol <= splitValNode) {
+            _searchClusterPoints(clusterPoints, queryPoint, distanceTol, nodeToCheck->left, depth + 1);
+        }
+        if (splitValQuery + distanceTol >= splitValNode) {
+            _searchClusterPoints(clusterPoints, queryPoint, distanceTol, nodeToCheck->right, depth + 1);
+        }
+    }
+}
+
+bool KdTree::_checkIfInBox(pcl::PointXYZI* queryPoint, Node* comparisonNode, float distanceTol) const {
+    bool inX = queryPoint->x + distanceTol >= comparisonNode->point->x &&
+               queryPoint->x - distanceTol <= comparisonNode->point->x;
+    bool inY = queryPoint->y + distanceTol >= comparisonNode->point->y &&
+               queryPoint->y - distanceTol <= comparisonNode->point->y;
+    bool inZ = queryPoint->z + distanceTol >= comparisonNode->point->z &&
+               queryPoint->z - distanceTol <= comparisonNode->point->z;
+
+    return inX && inY && inZ;
 };

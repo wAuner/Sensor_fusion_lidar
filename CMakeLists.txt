@@ -27,5 +27,8 @@ target_link_libraries(cluster_quiz ${PCL_LIBRARIES})
 add_executable(projectSubmission src/projectSubmission.cpp src/MyPointCloudProcessor.h src/render/render.cpp src/processPointClouds.tpp src/balancedKdtree.cpp)
 target_link_libraries(projectSubmission ${PCL_LIBRARIES})
 
+add_executable(testTree src/balancedTreeTest.cpp src/render/render.cpp src/processPointClouds.tpp src/balancedKdtree.cpp)
+target_link_libraries(testTree ${PCL_LIBRARIES})
+
 
 

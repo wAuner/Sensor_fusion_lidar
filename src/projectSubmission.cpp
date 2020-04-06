@@ -12,7 +12,7 @@ int main() {
 
     // set this to true to perform algorithms on the downsampled cloud
     // but visualize the results using the HD-Cloud
-    const bool renderFullCloud = false;
+    const bool renderFullCloud = true;
 
     pcl::visualization::PCLVisualizer::Ptr viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
     CameraAngle setAngle = XY;

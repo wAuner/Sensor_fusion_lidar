@@ -88,7 +88,7 @@ private:
 
     // cluster algorithm implementation to be called from Clustering
     std::vector<std::vector<int>>
-    _euclideanCluster(const std::vector<std::vector<float>>& points, std::shared_ptr<KdTree> tree, float distanceTol) {
+    _euclideanCluster(std::shared_ptr<KdTree> tree, float distanceTol) {
         std::vector<std::vector<int>> clusters;
         std::unordered_set<int> processedPoints{};
         for (int pointIdx = 0; pointIdx < points.size(); pointIdx++) {
@@ -113,17 +113,6 @@ private:
                 _findClusterPoints(points, neighborId, cluster, processedPoints, tree, distanceTol);
             }
         }
-    };
-
-    std::shared_ptr<KdTree> _createKdtree(typename pcl::PointCloud<PointT>::Ptr cloud) {
-        auto kdTreePtr = std::make_shared<KdTree>();
-        // naiive tree implementation, not balanced
-        for (int id = 0; id < cloud->points.size(); id++) {
-            PointT& point = cloud->points.at(id);
-            // create a vector from point's array and then add it together with its id into the tree
-            kdTreePtr->insert(std::vector<float>(std::begin(point.data_c), std::end(point.data_c)), id);
-        }
-        return kdTreePtr;
     };
 
 public:
@@ -159,12 +148,7 @@ public:
         std::shared_ptr<KdTree> kdTreePtr = std::make_shared<KdTree>(cloud);
         // TODO: check if everything works in 3d, maybe check dimensions in case of segfault
 
-        // extract points to vector for processing
-        std::vector<std::vector<float>> points;
-        for (auto point : cloud->points) {
-            points.emplace_back(std::begin(point.data_c), std::end(point.data_c));
-        }
-        std::vector<std::vector<int>> clusters = _euclideanCluster(points, kdTreePtr, clusterTolerance);
+        std::vector<std::vector<int>> clusters = _euclideanCluster(kdTreePtr, clusterTolerance);
         // create point clouds for return value based on clusters
         std::vector<typename pcl::PointCloud<PointT>::Ptr> cloudClusters;
 

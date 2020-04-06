@@ -110,7 +110,7 @@ struct KdTree {
             }
             // get feature values on which to split while traversing the tree
             int splitModulo = 2;
-            // adadpt feature split to 3D if necessary, just like in insert
+            // adapt feature split to 3D if necessary, just like in insert
             if (target.size() >= 3) {
                 splitModulo = 3;
             }
