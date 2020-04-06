@@ -6,7 +6,7 @@
 #define PLAYBACK_MYPOINTCLOUDPROCESSOR_H
 
 #include "processPointClouds.h"
-#include "quiz/cluster/kdtree.h"
+#include "balancedKdtree.h"
 #include <unordered_set>
 #include <memory>
 #include <random>
@@ -15,7 +15,6 @@
 template<typename PointT>
 class MyPointCloudProcessor : public ProcessPointClouds<PointT> {
 private:
-    // TODO: increase performance
     // ransac algorithm implementation to be called from SegmentPlane
     std::unordered_set<int> _ransac(typename pcl::PointCloud<PointT>::Ptr cloud, int maxIterations, float distanceTol) {
         // Time ransac implementation
@@ -129,7 +128,6 @@ private:
 
 public:
 
-    // TODO: increase efficiency
     std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT>::Ptr>
     SegmentPlane(typename pcl::PointCloud<PointT>::Ptr cloud, int maxIterations, float distanceThreshold) override {
         // Time segmentation process
@@ -153,9 +151,12 @@ public:
 
     // TODO: add override
     std::vector<typename pcl::PointCloud<PointT>::Ptr>
-    Clustering(typename pcl::PointCloud<PointT>::Ptr cloud, float clusterTolerance, int minSize, int maxSize) {
-        // TODO: insert all points into KDTree, write function for creating a balanced kdtree
-        std::shared_ptr<KdTree> kdTreePtr = _createKdtree(cloud);
+    Clustering(typename pcl::PointCloud<PointT>::Ptr cloud, float clusterTolerance, int minSize, int maxSize) override {
+        // Time clustering process
+        auto startTime = std::chrono::steady_clock::now();
+
+        // create a balanced KDTree from the point cloud
+        std::shared_ptr<KdTree> kdTreePtr = std::make_shared<KdTree>(cloud);
         // TODO: check if everything works in 3d, maybe check dimensions in case of segfault
 
         // extract points to vector for processing
@@ -177,6 +178,10 @@ public:
             // add the newly created cluster point cloud to the return container
             cloudClusters.push_back(cloudCluster);
         }
+        auto endTime = std::chrono::steady_clock::now();
+        auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+        std::cout << "clustering took " << elapsedTime.count() << " milliseconds and found " << clusters.size()
+                  << " clusters" << std::endl;
         return cloudClusters;
     };
 
