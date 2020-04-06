@@ -1,8 +1,7 @@
-/* \author Aaron Brown */
+// skeleton code from Aaron Brown
 // Quiz on implementing kd tree
 
 #include "../../render/render.h"
-
 
 // Structure to represent node of kd tree
 struct Node {
@@ -15,12 +14,15 @@ struct Node {
             : point(arr), id(setId), left(nullptr), right(nullptr) {}
 };
 
+
 struct KdTree {
     Node* root;
 
     KdTree()
             : root(nullptr) {}
 
+    // naiive insertion algorithm, not balanced.
+    // for use if not all points are available on construction
     void insert(const std::vector<float>& point, int id) {
         // point[0] is x, point[1] is y
         // the function should create a new node and place correctly with in the root
