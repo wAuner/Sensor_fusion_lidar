@@ -87,30 +87,31 @@ private:
     };
 
     // cluster algorithm implementation to be called from Clustering
-    std::vector<std::vector<int>>
-    _euclideanCluster(std::shared_ptr<KdTree> tree, float distanceTol) {
-        std::vector<std::vector<int>> clusters;
-        std::unordered_set<int> processedPoints{};
-        for (int pointIdx = 0; pointIdx < points.size(); pointIdx++) {
+    std::vector<std::vector<PointT*>>
+    _euclideanCluster(std::shared_ptr<KdTree<PointT>> tree, float distanceTol) {
+        std::vector<std::vector<PointT*>> clusters;
+        std::unordered_set<PointT*> processedPointIds{};
+        for (PointT& point : tree->cloudPtr->points) {
             // if point has not yet been processed
-            if (processedPoints.find(pointIdx) == processedPoints.end()) {
-                std::vector<int> cluster;
-                _findClusterPoints(points, pointIdx, cluster, processedPoints, tree, distanceTol);
+            PointT* currentPointPtr = &point;
+            if (processedPointIds.find(currentPointPtr) == processedPointIds.end()) {
+                std::vector<PointT*> cluster;
+                _findClusterPoints(cluster, currentPointPtr, processedPointIds, tree, distanceTol);
                 clusters.push_back(std::move(cluster));
             }
         }
         return clusters;
     };
 
-    void _findClusterPoints(const std::vector<std::vector<float>>& points, int pointIdx, std::vector<int>& cluster,
-                            std::unordered_set<int>& processedPoints, std::shared_ptr<KdTree> tree, float distanceTol) {
+    void _findClusterPoints(std::vector<PointT*>& cluster, PointT* currentPoint,
+                            std::unordered_set<PointT*>& processedPoints, std::shared_ptr<KdTree<PointT>> tree, float distanceTol) {
         // mark point as processed
-        processedPoints.insert(pointIdx);
-        cluster.push_back(pointIdx);
-        std::vector<int> nearestNeighborIds = tree->search(points.at(pointIdx), distanceTol);
-        for (int neighborId : nearestNeighborIds) {
-            if (processedPoints.find(neighborId) == processedPoints.end()) {
-                _findClusterPoints(points, neighborId, cluster, processedPoints, tree, distanceTol);
+        processedPoints.insert(currentPoint);
+        cluster.push_back(currentPoint);
+        std::vector<PointT*> nearestNeighborIds = tree->search(currentPoint, distanceTol);
+        for (PointT* neighborPtr : nearestNeighborIds) {
+            if (processedPoints.find(neighborPtr) == processedPoints.end()) {
+                _findClusterPoints(cluster, neighborPtr,processedPoints, tree, distanceTol);
             }
         }
     };
@@ -138,29 +139,30 @@ public:
         return this->SeparateClouds(inliersIndices, cloud);
     };
 
-    // TODO: add override
+
     std::vector<typename pcl::PointCloud<PointT>::Ptr>
     Clustering(typename pcl::PointCloud<PointT>::Ptr cloud, float clusterTolerance, int minSize, int maxSize) override {
         // Time clustering process
         auto startTime = std::chrono::steady_clock::now();
 
         // create a balanced KDTree from the point cloud
-        std::shared_ptr<KdTree> kdTreePtr = std::make_shared<KdTree>(cloud);
+        std::shared_ptr<KdTree<PointT>> kdTreePtr = std::make_shared<KdTree<PointT>>(cloud);
         // TODO: check if everything works in 3d, maybe check dimensions in case of segfault
 
-        std::vector<std::vector<int>> clusters = _euclideanCluster(kdTreePtr, clusterTolerance);
+        std::vector<std::vector<PointT*>> clusters = _euclideanCluster(kdTreePtr, clusterTolerance);
         // create point clouds for return value based on clusters
         std::vector<typename pcl::PointCloud<PointT>::Ptr> cloudClusters;
 
-        for (std::vector<int> cluster : clusters) {
+        // TODO: adapt to new datatypes
+        for (std::vector<PointT*> cluster : clusters) {
             // create a point cloud for every cluster and add the corresponding points to it
             typename pcl::PointCloud<PointT>::Ptr cloudCluster(new pcl::PointCloud<PointT>());
             cloudCluster->points.reserve(cluster.size());
-            for (int pointIndex : cluster) {
-                cloudCluster->points.emplace_back(cloud->points.at(pointIndex));
+            for (PointT* point : cluster) {
+                cloudCluster->points.push_back(std::move(*point));
             }
             // add the newly created cluster point cloud to the return container
-            cloudClusters.push_back(cloudCluster);
+            cloudClusters.push_back(std::move(cloudCluster));
         }
         auto endTime = std::chrono::steady_clock::now();
         auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
