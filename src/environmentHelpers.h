@@ -33,6 +33,7 @@ void initCamera(CameraAngle setAngle, pcl::visualization::PCLVisualizer::Ptr& vi
 
 // performs downsampling, segmentation (road/obstacles) and clustering of the input point cloud
 // renders either downsampled processing result or the resulting bounding boxes over the original cloud
+// uses polymorphism to allow easy switch between implementations
 void cityBlock(pcl::visualization::PCLVisualizer::Ptr& viewer,
                std::shared_ptr<ProcessPointClouds<pcl::PointXYZI>> pointProcessorI,
                const pcl::PointCloud<pcl::PointXYZI>::Ptr& inputCloud, const bool renderFullCloud) {

@@ -10,9 +10,9 @@ template <typename PointT>
 struct Node {
     // does not take ownership or change the point
     PointT* point;
+    // make sure all tree nodes are cleaned up
     std::shared_ptr<Node> left;
     std::shared_ptr<Node> right;
-    // maybe add depth member
 
     Node(PointT* point) : point(point), left(nullptr), right(nullptr) {};
 

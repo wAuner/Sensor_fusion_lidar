@@ -1,5 +1,7 @@
 //
 // Created by Winfried Auner
+// subclass where all algorithms are implemented from scratch
+// base class uses pcl's algorithms
 //
 
 #ifndef PLAYBACK_MYPOINTCLOUDPROCESSOR_H

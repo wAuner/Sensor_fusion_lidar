@@ -48,6 +48,7 @@ public:
 
 };
 
+// because starter code split template implementation
 #include "processPointClouds.tpp"
 
 #endif /* PROCESSPOINTCLOUDS_H_ */
