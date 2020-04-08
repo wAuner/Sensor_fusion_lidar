@@ -1,6 +1,3 @@
-//
-// Created by mimimint on 4/4/20.
-//
 
 #ifndef PLAYBACK_ENVIRONMENTHELPERS_H
 #define PLAYBACK_ENVIRONMENTHELPERS_H
@@ -67,7 +64,11 @@ void cityBlock(pcl::visualization::PCLVisualizer::Ptr& viewer,
     }
 
     // find objects as clusters in obstacle cloud
-    auto obstacleClouds = pointProcessorI->Clustering(segmentedClouds.first, .5, 10, 3000);
+    float clusterTolerance = 0.7;
+    int minSizeCluster = 15;
+    int maxSizeCluster = 3000;
+    auto obstacleClouds = pointProcessorI->Clustering(segmentedClouds.first, clusterTolerance, minSizeCluster,
+                                                      maxSizeCluster);
     // just some colors to render objects differently; colors don't indicate classification
     std::vector<Color> colors = {Color(1, 0, 0), Color(1, 1, 0), Color(0, 0, 1)};
 

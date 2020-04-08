@@ -8,9 +8,10 @@
 // to be as fast as possible
 template <typename PointT>
 struct Node {
+    // does not take ownership or change the point
     PointT* point;
-    Node* left;
-    Node* right;
+    std::shared_ptr<Node> left;
+    std::shared_ptr<Node> right;
     // maybe add depth member
 
     Node(PointT* point) : point(point), left(nullptr), right(nullptr) {};
@@ -19,10 +20,10 @@ struct Node {
 
 template <typename PointT>
 class KdTree {
-    Node<PointT>* _root;
+    std::shared_ptr<Node<PointT>> _root;
 
     // to be called from constructor
-    void _insertPoints(std::vector<PointT*>& points, int depth, Node<PointT>*& currentNode) {
+    void _insertPoints(std::vector<PointT*>& points, int depth, std::shared_ptr<Node<PointT>>& currentNode) {
         // lambda func to allow sorting of points based on alternating features depending on tree depth
         auto comparePoints = [depth](const PointT* pointA, const PointT* pointB)-> bool{
             return pointA->data[depth % 3] < pointB->data[depth % 3];
@@ -38,17 +39,19 @@ class KdTree {
         PointT* pointToSplitOn = points.at(medianPos);
 
         // find median
-        //split left right
+        // split left right
+        // handle base cases of recursion
         if (currentNode == nullptr) {
-            // memory leak?
-            currentNode = new Node<PointT>(pointToSplitOn);
+            currentNode = std::make_shared<Node<PointT>>(pointToSplitOn);
             // base case if only two points are left
             if (points.size() == 2) {
-                currentNode->right = new Node<PointT>(points.at(1));
+                currentNode->right = std::make_shared<Node<PointT>>(points.at(1));
                 return;
             } else if (points.size() == 1) {
                 return;
             }
+            // everything smaller than the median goes into left branch, the rest in the right
+            // median is the splitting point that separates the space
             // iterator is half open range[begin, end)
             std::vector<PointT*> pointsLeft(points.begin(), points.begin() + medianPos);
             // skip median point to avoid inserting it twice
@@ -60,7 +63,7 @@ class KdTree {
 
     // traverses the tree and looks for points close the queryPoint
     void _searchClusterPoints(std::vector<PointT*>& clusterPoints, PointT* queryPoint, const float& distanceTol,
-                                         Node<PointT>* nodeToCheck, int depth) {
+                                         std::shared_ptr<Node<PointT>>& nodeToCheck, int depth) {
         // return if end of tree is reached
         if (nodeToCheck != nullptr) {
             // check if points are close within cube
@@ -82,7 +85,7 @@ class KdTree {
     }
 
 
-    bool _checkIfInBox(PointT* queryPoint, Node<PointT>* comparisonNode, float distanceTol) const {
+    bool _checkIfInBox(PointT* queryPoint, std::shared_ptr<Node<PointT>>& comparisonNode, float distanceTol) const {
         bool inX = queryPoint->x + distanceTol >= comparisonNode->point->x &&
                    queryPoint->x - distanceTol <= comparisonNode->point->x;
         bool inY = queryPoint->y + distanceTol >= comparisonNode->point->y &&
@@ -94,10 +97,10 @@ class KdTree {
     };
 
 public:
-    typename pcl::PointCloud<PointT>::Ptr cloudPtr;
+    typename pcl::PointCloud<PointT>::Ptr _cloudPtr;
     KdTree() : _root(nullptr) {};
     // custom constructor to create a balanced KDtree from pointcloud
-    KdTree(typename pcl::PointCloud<PointT>::Ptr cloud) : _root(nullptr), cloudPtr(cloud) {
+    KdTree(typename pcl::PointCloud<PointT>::Ptr cloud) : _root(nullptr), _cloudPtr(cloud) {
         // use pointers to make things super fast
         std::vector<PointT*> points;
         points.reserve(cloud->points.size());

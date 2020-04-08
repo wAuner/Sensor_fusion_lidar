@@ -91,7 +91,7 @@ private:
     _euclideanCluster(std::shared_ptr<KdTree<PointT>> tree, float distanceTol) {
         std::vector<std::vector<PointT*>> clusters;
         std::unordered_set<PointT*> processedPointIds{};
-        for (PointT& point : tree->cloudPtr->points) {
+        for (PointT& point : tree->_cloudPtr->points) {
             // if point has not yet been processed
             PointT* currentPointPtr = &point;
             if (processedPointIds.find(currentPointPtr) == processedPointIds.end()) {
